@@ -323,6 +323,8 @@ function Start-PSBuild {
                      "fxdependent-win-desktop",
                      "linux-arm",
                      "linux-arm64",
+                     "ubuntu.22.04-ppc64le",
+                     "ubuntu.22.04-s390x",
                      "linux-x64",
                      "osx-arm64",
                      "osx-x64",
@@ -512,6 +514,12 @@ Fix steps:
     $Arguments += "/property:AppDeployment=$AppDeployment"
     $Arguments += "--configuration", $Options.Configuration
     $Arguments += "--framework", $Options.Framework
+
+    # s390x and ppc64le builds do not support ReadyToRun as their runtimes are Mono-based.
+    # This property should override the <PublishReadyToRun> in the PowerShell.Common.props file.
+    if ($Options.Runtime -match 's390x|ppc64le') {
+        $Arguments += "/property:PublishReadyToRun=false"
+    }
 
     if ($Detailed.IsPresent)
     {
@@ -1011,6 +1019,8 @@ function New-PSOptions {
                      "fxdependent-win-desktop",
                      "linux-arm",
                      "linux-arm64",
+                     "ubuntu.22.04-ppc64le",
+                     "ubuntu.22.04-s390x",
                      "linux-x64",
                      "osx-arm64",
                      "osx-x64",
@@ -3832,6 +3842,12 @@ function Clear-NativeDependencies
         }
         '.*-arm64' {
             $diasymFileName = $diasymFileNamePattern -f 'arm64'
+        }
+        '.*-s390x' {
+            $diasymFileName = $diasymFileNamePattern -f 's390x'
+        }
+        '.*-ppc64le' {
+            $diasymFileName = $diasymFileNamePattern -f 'ppc64le'
         }
         'fxdependent.*' {
             Write-Verbose -Message "$($script:Options.Runtime) is a fxdependent runtime, no cleanup needed in pwsh.deps.json" -Verbose
