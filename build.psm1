@@ -323,6 +323,8 @@ function Start-PSBuild {
                      "fxdependent-win-desktop",
                      "linux-arm",
                      "linux-arm64",
+                     "ubuntu.22.04-ppc64le",
+                     "ubuntu.22.04-s390x",
                      "linux-x64",
                      "osx-arm64",
                      "osx-x64",
@@ -493,9 +495,11 @@ Fix steps:
     }
 
     # Framework Dependent builds do not support ReadyToRun as it needs a specific runtime to optimize for.
+    # s390x and ppc64le builds also do not support ReadyToRun as their runtimes are Mono-based.
     # The property is set in Powershell.Common.props file.
     # We override the property through the build command line.
-    if(($Options.Runtime -like 'fxdependent*' -or $ForMinimalSize) -and $Options.Runtime -notmatch $optimizedFddRegex) {
+    if((($Options.Runtime -like 'fxdependent*' -or $ForMinimalSize) -and $Options.Runtime -notmatch $optimizedFddRegex) -or
+         $Options.Runtime -match 's390x|ppc64le') {
         $Arguments += "/property:PublishReadyToRun=false"
     }
 
@@ -772,7 +776,7 @@ function Switch-PSNugetConfig {
     } elseif ( $Source -eq 'NuGetOnly') {
         New-NugetConfigFile -NugetPackageSource $nugetorg   -Destination "$PSScriptRoot/" @extraParams
         New-NugetConfigFile -NugetPackageSource $gallery                -Destination "$PSScriptRoot/src/Modules/" @extraParams
-        New-NugetConfigFile -NugetPackageSource $gallery                -Destination "$PSScriptRoot/test/tools/Modules/" @extraParams        
+        New-NugetConfigFile -NugetPackageSource $gallery                -Destination "$PSScriptRoot/test/tools/Modules/" @extraParams
     } elseif ( $Source -eq 'Private') {
         $powerShellPackages = [NugetPackageSource] @{Url = 'https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/PowerShell/nuget/v3/index.json'; Name = 'powershell' }
 
@@ -1000,6 +1004,8 @@ function New-PSOptions {
                      "fxdependent-win-desktop",
                      "linux-arm",
                      "linux-arm64",
+                     "ubuntu.22.04-ppc64le",
+                     "ubuntu.22.04-s390x",
                      "linux-x64",
                      "osx-arm64",
                      "osx-x64",
@@ -3799,6 +3805,12 @@ function Clear-NativeDependencies
         }
         '.*-arm64' {
             $diasymFileName = $diasymFileNamePattern -f 'arm64'
+        }
+        '.*-s390x' {
+            $diasymFileName = $diasymFileNamePattern -f 's390x'
+        }
+        '.*-ppc64le' {
+            $diasymFileName = $diasymFileNamePattern -f 'ppc64le'
         }
         'fxdependent.*' {
             Write-Verbose -Message "$($script:Options.Runtime) is a fxdependent runtime, no cleanup needed in pwsh.deps.json" -Verbose
