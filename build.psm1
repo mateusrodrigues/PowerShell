@@ -1739,7 +1739,11 @@ function Start-PSPester {
 
     if (-not (Get-Module -ListAvailable -Name $Pester -ErrorAction SilentlyContinue | Where-Object { $_.Version -ge "4.2" } ))
     {
-        Restore-PSPester
+        $snapModulesLocation = "$HOME/.local/share/powershell/Modules"
+        mkdir -p $snapModulesLocation
+        # We need to change the destination to a writable location because Restore-PSPester uses a read-only
+        # location by default in the context of snaps.
+        Restore-PSPester -Destination $snapModulesLocation
     }
 
     if ($IncludeFailingTest.IsPresent)
